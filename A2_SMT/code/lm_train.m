@@ -28,7 +28,7 @@ function LM = lm_train(dataDir, language, fn_LM)
 
 global CSC401_A2_DEFNS
 
-LM=struct();
+LM = struct();
 LM.uni = struct();
 LM.bi = struct();
 
@@ -48,9 +48,35 @@ for iFile=1:length(DD)
     processedLine =  preprocess(lines{l}, language);
     words = strsplit(' ', processedLine );
     
-    % TODO: THE STUDENT IMPLEMENTS THE FOLLOWING
-
-    % TODO: THE STUDENT IMPLEMENTED THE PRECEDING
+    % ----------------------------------------------------
+    
+    % Count bi/unigrams
+    for w=1:length(words)
+        
+        current_word = convertSymbols( words{w} );
+        
+        if w > 1
+           % Count bigram
+           prev_word = convertSymbols( words{w-1} );
+            if isfield(LM.bi, prev_word) && isfield(LM.bi.prev_word, current_word)
+                LM.bi.prev_word.current_word = LM.bi.prev_word.current_word + 1;
+            elseif isfield(LM.bi, prev_word)
+                LM.bi.prev_word.current_word = 1;
+            else
+                LM.bi.prev_word = struct();
+                LM.bi.prev_word.current_word = 1;        
+        end
+        
+        if isfield(LM.uni, current_word)
+            LM.uni.current_word = LM.uni.current_word + 1;
+        else
+            LM.uni.current_word = 1;
+        end
+        
+        
+    end
+        
+    % ----------------------------------------------------
     
   end
 end
