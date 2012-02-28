@@ -9,7 +9,7 @@ function LM = lm_train(dataDir, language, fn_LM)
 %
 %       dataDir     : (directory name) The top-level directory containing 
 %                                      data from which to train or decode
-%                                      e.g., '/u/cs401/A2_SMT/data/Toy/'
+%                                      e.g., '/u/cs401/A2_SMT/data/Toy'
 %       language    : (string) either 'e' for English or 'f' for French
 %       fn_LM       : (filename) the location to save the language model,
 %                                once trained
@@ -39,38 +39,51 @@ DD = dir( [ dataDir, filesep, '*', language] );
 
 disp([ dataDir, filesep, '.*', language] );
 
-for iFile=1:length(DD)
+%for iFile=1:length(DD)
+for iFile=1:1
 
+  file_name = DD(iFile).name
+    
   lines = textread([dataDir, filesep, DD(iFile).name], '%s','delimiter','\n');
 
   for l=1:length(lines)
-
-    processedLine =  preprocess(lines{l}, language);
-    words = strsplit(' ', processedLine );
-    
+      
     % ----------------------------------------------------
+
+    processedLine = preprocess(lines{l}, language);
+    %words = strsplit(' ', processedLine );
+    
+    sentence = strcat(SENTSTARTMARK, processedLine, SENTENDMARK);
+    words = strsplit(' ', sentence );
     
     % Count bi/unigrams
     for w=1:length(words)
         
         current_word = convertSymbols( words{w} );
         
-        if w > 1
-           % Count bigram
-           prev_word = convertSymbols( words{w-1} );
-            if isfield(LM.bi, prev_word) && isfield(LM.bi.prev_word, current_word)
-                LM.bi.prev_word.current_word = LM.bi.prev_word.current_word + 1;
-            elseif isfield(LM.bi, prev_word)
-                LM.bi.prev_word.current_word = 1;
-            else
-                LM.bi.prev_word = struct();
-                LM.bi.prev_word.current_word = 1;        
-        end
+        if ~isempty(current_word)
         
-        if isfield(LM.uni, current_word)
-            LM.uni.current_word = LM.uni.current_word + 1;
-        else
-            LM.uni.current_word = 1;
+            if w > 1
+               % Count bigram
+               prev_word = convertSymbols( words{w-1} );
+               if ~isempty(prev_word)
+                    if isfield(LM.bi, prev_word) && isfield(LM.bi.(prev_word), current_word)
+                        LM.bi.(prev_word).(current_word) = LM.bi.(prev_word).(current_word) + 1;
+                    elseif isfield(LM.bi, prev_word)
+                        LM.bi.(prev_word).(current_word) = 1;
+                    else
+                        LM.bi.(prev_word) = struct();
+                        LM.bi.(prev_word).(current_word) = 1;
+                    end
+               end
+            end
+
+            if isfield(LM.uni, current_word)
+                LM.uni.(current_word) = LM.uni.(current_word) + 1;
+            else
+                LM.uni.(current_word) = 1;
+            end
+        
         end
         
         
