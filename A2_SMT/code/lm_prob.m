@@ -91,9 +91,6 @@ end
 
 
 function logProb = good_turing(LM, words)
-    
-    % p = polyfit(x,y,1)
-    % y = polyval(p, x)
 
     % N = number of training instances
     % r = frequency of N-gram
@@ -108,24 +105,23 @@ function logProb = good_turing(LM, words)
     %
     % P(w_n|w_n-1) = P(w_n-1, w_n) / P(w_n-1)
 
-    % Renormalization:
-    % Keep the estimate of the probability mass given to 
-    % unseen items as N_1 / N and renormalizing all the estimates
-    % for previously seen items.
     
     % Calculate N and Calculate N_r - the number of bins with freq r.
-    N = 0
-    N_r = cell(length(fieldnames(LM.uni)));
+    N = 0;
+    N_r = java.util.Hashtable;
+    N_r.put(0,0);
+    N_r.put(1,0);
+
 
     f = fieldnames(LM.uni);
     for i=1:length(f)
         word = f{i};
         r = LM.uni.(word);
         N = N + r;
-        if ~isfield(N_r, r)
-          N_r{r} = 1;
+        if ~N_r.containsKey(r)
+          N_r.put(r,1);
         else
-          N_r{r} = N_r{r} + 1;
+          N_r.put(r, N_r.get(r)+1);
         end
     end
 
@@ -136,11 +132,11 @@ function logProb = good_turing(LM, words)
     X = [];
     Y = [];
 
-    f = fieldnames(N_r)
-    for i=1:length(f)
-      r = f{i};
-      X(i) = r;
-      Y(i) = N_r{r};
+    N_r_freqs = N_r.keySet().toArray();
+    for i=1:length(N_r_freqs)
+      r = N_r_freqs(i);
+      X(i) = log2(r);
+      Y(i) = log2(N_r.get(r));
     end
 
     S = polyfit(X, Y, 1);
@@ -157,22 +153,50 @@ function logProb = good_turing(LM, words)
       second_word = words{w};
 
       % Calculate P(first_word second_word)
-      r = LM.bi.(first_word).(second_word);
+
+      if isfield(LM.bi, first_word) && isfield(LM.bi.(first_word), second_word)
+        r = LM.bi.(first_word).(second_word);
+      else
+        r = 0;
+      end
+
       if r == 0
-        prob_first_word_second_word = N_r{1} / (N_r{0} * N);
+        if N_r.get(0) == 0 || N == 0
+          prob_first_word_second_word = 0;
+        else
+          prob_first_word_second_word = N_r.get(1) / (N_r.get(0) * N);
+        end
       else
         r_star = (r+1) * polyval(S,r+1) / polyval(S,r);
         prob_first_word_second_word = r_star / N;
+      end
 
       % Calculate P(first_word)
       r = LM.uni.(first_word);
-      if r == 0
-        prob_first_word =  N_r{1} / (N_r{0} * N);
+      if isfield(LM.uni, first_word)
+        r = LM.uni.(first_word);
       else
-        r_star = (r+1) * polyval(S,r+1) / polyval(S,r);
+        r = 0;
       end
 
-      logProb = logProb + log2(prob_first_word_second_word / prob_first_word);
+      if r == 0
+        if N_r.get(0) == 0 || N == 0
+          prob_first_word = 0;
+        else
+          prob_first_word =  N_r.get(1) / (N_r.get(0) * N);
+        end
+      else
+        r_star = (r+1) * polyval(S,r+1) / polyval(S,r);
+        prob_first_word = r_star / N;
+      end
+
+      if prob_first_word == 0
+        prob = 0;
+      else
+        prob = prob_first_word_second_word / prob_first_word;
+      end
+
+      logProb = logProb + log2(prob);
 
     end
 
