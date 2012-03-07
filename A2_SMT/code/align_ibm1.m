@@ -29,7 +29,7 @@ function AM = align_ibm1(trainDir, numSentences, maxIter, fn_AM)
 % 
 % Template (c) 2011 Jackie C.K. Cheung and Frank Rudzicz
    
-  %global CSC401_A2_DEFNS
+  global CSC401_A2_DEFNS
     
   % Read in the training data
   [eng, fre] = read_hansard(trainDir, numSentences);

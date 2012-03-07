@@ -109,7 +109,7 @@ function logProb = good_turing(LM, words)
     % Calculate N and Calculate N_r - the number of bins with freq r.
     N = 0;
     N_r = java.util.Hashtable;
-    N_r.put(0,0);
+    N_r.put(0,0); % Make sure these fields exist
     N_r.put(1,0);
 
 
@@ -172,7 +172,6 @@ function logProb = good_turing(LM, words)
       end
 
       % Calculate P(first_word)
-      r = LM.uni.(first_word);
       if isfield(LM.uni, first_word)
         r = LM.uni.(first_word);
       else
