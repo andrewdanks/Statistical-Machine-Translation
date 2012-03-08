@@ -95,8 +95,14 @@ function [eng, fre] = read_hansard(trainDir, numSentences)
                 break
             end
             
-            eng{sentence_number} = strsplit(' ', preprocess(english_lines{i}, 'e'));            
-            fre{sentence_number} = strsplit(' ', preprocess(french_lines{i}, 'f'));
+            words = strsplit(' ', preprocess(english_lines{i}, 'e'));
+            words(length(words)+1) = '___NULL___'; % add NULL token
+            eng{sentence_number} = words;
+
+            words = strsplit(' ', preprocess(french_lines{i}, 'f'));
+            words(length(words)+1) = '___NULL___'; % add NULL token
+
+            fre{sentence_number} = words;
             
             sentence_number = sentence_number + 1;
       

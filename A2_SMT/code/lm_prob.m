@@ -1,4 +1,4 @@
-function logProb = lm_prob(sentence, LM, type, delta, vocabSize)
+function logProb = lm_prob(sentence, LM, type, delta, vocabSize, N, N_r, count_bigrams, S)
 %
 %  lm_prob
 % 
@@ -48,15 +48,7 @@ function logProb = lm_prob(sentence, LM, type, delta, vocabSize)
   
   % Calculate log P(sentence) = P(w1|w0) x P(w2|w1) x ... x P(w_n|w_n-1)
   
-  if strcmp(type, 'turing')
-    logProb = good_turing(LM, words);
-  else
-    logProb = delta_smoothing(LM, words, delta, vocabSize);
-  end
-
-end
-
-function logProb = delta_smoothing(LM, words, delta, vocabSize)
+  if ~strcmp(type, 'turing')
 
     logProb = 0;
 
@@ -77,7 +69,7 @@ function logProb = delta_smoothing(LM, words, delta, vocabSize)
             count_first_word_second_word = LM.bi.(first_word).(second_word);
         end
 
-        if count_first_word == 0 && vocabSize == 0 && count_first_word_second_word == 0 && delta == 0
+        if count_first_word == 0 && (vocabSize == 0 || delta == 0)
             cond_prob = 0;
         else
             cond_prob = (count_first_word_second_word + delta) / (count_first_word + delta*vocabSize);
@@ -87,10 +79,21 @@ function logProb = delta_smoothing(LM, words, delta, vocabSize)
       
     end
 
+  else
+
+    if nargin < 9
+      [N, N_r, count_bigrams, S] = good_turing_init(LM);
+    end
+
+    logProb = good_turing(LM, words, N, N_r, count_bigrams, S);
+
+  end
+  
 end
 
 
-function logProb = good_turing(LM, words)
+
+function logProb = good_turing(LM, words, N, N_r, count_bigrams, S)
 
     % N = number of training instances
     % r = frequency of N-gram
@@ -105,46 +108,6 @@ function logProb = good_turing(LM, words)
     %
     % P(w_n|w_n-1) = P(w_n-1, w_n) / P(w_n-1)
 
-    
-    % Calculate N and Calculate N_r - the number of bins with freq r.
-    N = 0;
-    N_r = java.util.Hashtable;
-    N_r.put(0,0); % Make sure these fields exist
-    N_r.put(1,0);
-
-
-    f = fieldnames(LM.uni);
-    for i=1:length(f)
-        word = f{i};
-        r = LM.uni.(word);
-        N = N + r;
-        if ~N_r.containsKey(r)
-          N_r.put(r,1);
-        else
-          N_r.put(r, N_r.get(r)+1);
-        end
-    end
-
-    % Find a smoothing curve of the form S(r) = N_r = a*r^b where b < -1
-    % estimated by log(N_r) = a + b log(r)
-
-    % We have everything we need in N_r.
-    X = [];
-    Y = [];
-
-    N_r_freqs = N_r.keySet().toArray();
-    for i=1:length(N_r_freqs)
-      r = N_r_freqs(i);
-      X(i) = log2(r);
-      Y(i) = log2(N_r.get(r));
-    end
-
-    S = polyfit(X, Y, 1);
-
-    % Free up resources
-    clear X Y
-
-    % Finally calculate log-probability
     logProb = 0;
 
     for w=2:length(words)
@@ -161,11 +124,7 @@ function logProb = good_turing(LM, words)
       end
 
       if r == 0
-        if N_r.get(0) == 0 || N == 0
-          prob_first_word_second_word = 0;
-        else
-          prob_first_word_second_word = N_r.get(1) / (N_r.get(0) * N);
-        end
+        prob_first_word_second_word = (N_r.get(1) / N) / (power(length(fieldnames(LM.uni)),2)-count_bigrams); 
       else
         r_star = (r+1) * polyval(S,r+1) / polyval(S,r);
         prob_first_word_second_word = r_star / N;
@@ -179,16 +138,13 @@ function logProb = good_turing(LM, words)
       end
 
       if r == 0
-        if N_r.get(0) == 0 || N == 0
-          prob_first_word = 0;
-        else
-          prob_first_word =  N_r.get(1) / (N_r.get(0) * N);
-        end
+        prob_first_word =  N_r.get(1) / N;
       else
         r_star = (r+1) * polyval(S,r+1) / polyval(S,r);
         prob_first_word = r_star / N;
       end
 
+      % Calculate P(second_word | first_word)
       if prob_first_word == 0
         prob = 0;
       else

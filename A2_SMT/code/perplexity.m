@@ -1,4 +1,4 @@
-function pp = perplexity( LM, testDir, language, type, delta )
+function pp = perplexity( LM, testDir, language, smooth_type, delta )
 %
 %  perplexity
 % 
@@ -24,6 +24,10 @@ pp        = 0;
 N         = 0;
 vocabSize = length(fields(LM.uni));
 
+if strcmp(smooth_type,'turing')
+  [N, N_r, count_bigrams, S] = good_turing_init(LM);
+end
+
 for iFile=1:length(DD)
 
   lines = textread([testDir, filesep, DD(iFile).name], '%s','delimiter','\n');
@@ -31,7 +35,13 @@ for iFile=1:length(DD)
   for l=1:length(lines)
 
     processedLine = preprocess(lines{l}, language);
-    tpp = lm_prob( processedLine, LM, type, delta, vocabSize );
+
+    if strcmp(smooth_type,'turing')    
+      tpp = lm_prob( processedLine, LM, smooth_type, 0, 0, N, N_r, count_bigrams, S);
+    else
+      tpp = lm_prob( processedLine, LM, smooth_type, delta, vocabSize, 0, 0, 0, 0);
+    end
+    
     if (tpp > -Inf)   % only consider sentences that have some probability 
       pp = pp + tpp;
       words = strsplit(' ', processedLine);
