@@ -139,7 +139,7 @@ function AM = initialize(eng, fre)
             english_word = eng{i}{j};
             
             if ~isfield(AM, english_word)
-               AM.(english_word) = struct(CSC401_A2_DEFNS.NULL_TOKEN, 0); 
+               AM.(english_word) = struct('NULL_', 0); 
             end
             
             for k=1:length(french_sentence)
@@ -220,7 +220,7 @@ function t = em_step(t, eng, fre, AVG_FRE_LEN)
 
         % add NULL token
         for x=1:min(3,length(french_sentence)-round(AVG_FRE_LEN))
-            french_sentence{length(french_sentence)+1} = CSC401_A2_DEFNS.NULL_TOKEN;
+            french_sentence{length(french_sentence)+1} = 'NULL_';
         end
 
         french_words_seen = struct();
