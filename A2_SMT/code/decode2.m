@@ -71,10 +71,6 @@ VE = fieldnames(AM);
 AM.(CSC401_A2_DEFNS.SENTSTART ) = SS;
 AM.(CSC401_A2_DEFNS.SENTEND ) = SE;
 
-if delta == -1
-  [N, N_r, count_bigrams, S] = good_turing_init(LM)
-end
-
 MX = 0;
 for iew=1:length(VE)
   if isfield(LM.uni, VE{iew}),
@@ -108,9 +104,7 @@ order   = 1:length(frenchWords);
 
 % initial best guess
 bestHyp = cell2string(englishWords(1,order));
-
-p_bestHyp = lm_prob( processedLine, LM, lmtype, delta, vocabSize) + ...
-
+p_bestHyp = lm_prob( bestHyp, LM, lmtype, delta, vocabSize ) + ...
     sum(log2(scores(1,order)));
 
 
@@ -136,8 +130,7 @@ while (iter < MAXTRANS )
   % evaluate
   newHyp = cell2string(diag(englishWords(wordInd,order)));
   p_newHyp = lm_prob( newHyp, LM, lmtype, delta, vocabSize )+ ...
-  
-  sum(log2(diag(scores(wordInd,order))));
+      sum(log2(diag(scores(wordInd,order))));
 
   if p_newHyp > p_bestHyp
     p_bestHyp = p_newHyp;
@@ -148,7 +141,7 @@ while (iter < MAXTRANS )
 end
 
 
-return
+end
 
 
 function eSen = cell2string( c )
