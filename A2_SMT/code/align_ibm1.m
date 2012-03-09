@@ -129,7 +129,8 @@ function AM = initialize(eng, fre)
 % Initialize alignment model uniformly.
 % Only set non-zero probabilities where word pairs appear in corresponding sentences.
 %
-    AM = struct('NULL_', 0); % AM.(english_word).(foreign_word)
+    AM = {}; % AM.(english_word).(foreign_word)
+    AM.NULL_ = struct();
 
     for i=1:length(eng)
         
