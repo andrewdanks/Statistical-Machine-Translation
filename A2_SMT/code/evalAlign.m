@@ -4,7 +4,9 @@ function evalAlign(LME, LMF)
     global CSC401_A2_DEFNS
 
     if ~LME or ~LMF
+        disp('Computing LME and LMF...');
         [LME, LMF] = evalStart();
+        disp('Done.')
     end
 
     vocabSizeEng = length(fieldnames(LME.uni));    
@@ -17,7 +19,7 @@ function evalAlign(LME, LMF)
     deltas = [0, 0.1, 0.25, 0.5, 0.75, 1.0, -1]; % -1 is hack to use good-turing method
 
     for n=1:length(numSentences)
-        AM = align_ibm1( CSC401_A2_DEFNS.TRAIN_DIR, numSentences(n), 20, strcat('AMFE_',int2str(numSentences(n),'.mat') );
+        AM = align_ibm1( CSC401_A2_DEFNS.TRAIN_DIR, numSentences(n), 20, strcat('AMFE_',num2str(numSentences(n)),'.mat') );
         for d=1:length(deltas)
             delta = deltas(d);
 
