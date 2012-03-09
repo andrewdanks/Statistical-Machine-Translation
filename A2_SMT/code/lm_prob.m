@@ -62,7 +62,6 @@ function logProb = lm_prob(sentence, LM, type, delta, vocabSize, N, N_r, count_b
 
         if isfield(LM.bi, first_word)
             count_first_word = LM.uni.(first_word);
-            %count_first_word = length(fieldnames(LM.bi.(first_word)));
         end
 
         if isfield(LM.bi, first_word) && isfield(LM.bi.(first_word), second_word)
@@ -75,7 +74,12 @@ function logProb = lm_prob(sentence, LM, type, delta, vocabSize, N, N_r, count_b
             cond_prob = (count_first_word_second_word + delta) / (count_first_word + delta*vocabSize);
         end
 
-        logProb = logProb + log2(cond_prob);
+        if cond_prob > 0
+          logProb = logProb + log2(cond_prob);
+        else
+          logProb = -Inf
+          break
+        end
       
     end
 
