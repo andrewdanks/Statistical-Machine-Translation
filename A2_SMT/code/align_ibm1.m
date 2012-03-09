@@ -32,7 +32,7 @@ function AM = align_ibm1(trainDir, numSentences, maxIter, fn_AM)
   global CSC401_A2_DEFNS
     
   % Read in the training data
-  [eng, fre] = read_hansard(trainDir, numSentences);
+  [eng, fre, avg_french_sentence_length] = read_hansard(trainDir, numSentences);
 
   % Initialize AM uniformly 
   AM = initialize(eng, fre);
@@ -40,7 +40,7 @@ function AM = align_ibm1(trainDir, numSentences, maxIter, fn_AM)
   % Iterate between E and M steps
   for iter=1:maxIter
     disp(['em_step iteration ', int2str(iter)]);
-    AM = em_step(AM, eng, fre);
+    AM = em_step(AM, eng, fre, avg_french_sentence_length);
   end 
 
   % Save the alignment model
@@ -57,7 +57,7 @@ end
 %
 % --------------------------------------------------------------------------------
 
-function [eng, fre] = read_hansard(trainDir, numSentences)
+function [eng, fre, avg_french_sentence_length] = read_hansard(trainDir, numSentences)
 %
 % Read 'numSentences' parallel sentences from texts in the 'dir' directory.
 %
@@ -76,6 +76,8 @@ function [eng, fre] = read_hansard(trainDir, numSentences)
     DD = dir( [ trainDir, filesep, '*', 'e'] );
     
     sentence_number = 1;
+
+    avg_french_sentence_length = 0
 
     for iFile=1:length(DD)
         
@@ -96,19 +98,20 @@ function [eng, fre] = read_hansard(trainDir, numSentences)
             end
             
             words = strsplit(' ', preprocess(english_lines{i}, 'e'));
-            words(length(words)+1) = '___NULL___'; % add NULL token
             eng{sentence_number} = words;
 
             words = strsplit(' ', preprocess(french_lines{i}, 'f'));
-            words(length(words)+1) = '___NULL___'; % add NULL token
-
             fre{sentence_number} = words;
             
             sentence_number = sentence_number + 1;
+
+            avg_french_sentence_length = avg_french_sentence_length + length(fre);
       
         end
 
     end
+
+    avg_french_sentence_length = avg_french_sentence_length / length(DD);
   
 
 end
@@ -165,7 +168,7 @@ function AM = initialize(eng, fre)
     
 end
 
-function t = em_step(t, eng, fre)
+function t = em_step(t, eng, fre, AVG_FRE_LEN)
 % 
 % One step in the EM algorithm.
 %
@@ -209,7 +212,12 @@ function t = em_step(t, eng, fre)
                 
         english_sentence = eng{s};
         french_sentence = fre{s};
-        
+
+        % add NULL token
+        for x=1:min(3,length(french_sentence)-round(AVG_FRE_LEN))
+            french_sentence(length(french_sentence)+1) = '___NULL___';
+        end
+
         french_words_seen = struct();
         
         for f=1:length(french_sentence)
@@ -261,7 +269,9 @@ function t = em_step(t, eng, fre)
                 % english_word
                 prob_f_e = t.(english_word).(french_word);
                 
-                % Expected number 
+
+                % Compute expectations
+
                 to_add = (prob_f_e * count(english_word, english_sentence) * count(french_word, french_sentence)) / denom_c;
                 
                 tcount.(english_word).(french_word) = tcount.(english_word).(french_word) + to_add;
@@ -278,7 +288,7 @@ function t = em_step(t, eng, fre)
   
     disp('Running maximization step...');
     
-    % Maximization step
+    % Maximization step.
     fieldnames_total = fieldnames(total);
     for e=1:length(fieldnames_total)
         english_word = fieldnames_total{e};
