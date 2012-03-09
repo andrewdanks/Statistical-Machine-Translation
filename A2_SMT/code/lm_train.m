@@ -35,8 +35,6 @@ SENTENDMARK = 'SENTEND';
 
 DD = dir( [ dataDir, filesep, '*', language] );
 
-disp([ dataDir, filesep, '.*', language] );
-
 for iFile=1:length(DD)
 
   %disp(DD(iFile).name);

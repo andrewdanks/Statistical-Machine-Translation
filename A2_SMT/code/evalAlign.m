@@ -3,7 +3,7 @@ function evalAlign(LME, LMF)
 
     global CSC401_A2_DEFNS
 
-    if ~exist('LME') or ~exist('LMF')
+    if ~exist('LME') || ~exist('LMF')
         disp('Computing LME and LMF...');
         [LME, LMF] = evalStart();
         disp('Done.')
