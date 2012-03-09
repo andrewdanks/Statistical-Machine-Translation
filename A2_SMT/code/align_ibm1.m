@@ -102,10 +102,10 @@ function [eng, fre, avg_eng_sentence_length] = read_hansard(trainDir, numSentenc
             end
             
             words = strsplit(' ', preprocess(english_lines{i}, 'e'));
-            eng{sentence_number} = words(1:length(words)-1); % skip SENTSTART / SENTEND
+            eng{sentence_number} = words(2:length(words)-1); % skip SENTSTART / SENTEND
 
             words = strsplit(' ', preprocess(french_lines{i}, 'f'));
-            fre{sentence_number} = words(1:length(words)-1);
+            fre{sentence_number} = words(2:length(words)-1);
             
             sentence_number = sentence_number + 1;
 
@@ -260,7 +260,7 @@ function t = em_step(t, eng, fre, AVG_ENG_LEN)
             english_words_seen = struct();
             for e=1:length(english_sentence)
                 english_word = english_sentence{e};
-                if ~isfield(english_words_seen, english_word)
+                if ~isfield(english_words_seen, english_word) && isfield(t, english_word) && isfield(t.(english_word), french_word)
                     english_words_seen.(english_word) = 1; % mark seen
                     denom_c = denom_c + (t.(english_word).(french_word) * count(french_word, french_sentence));
                 end
