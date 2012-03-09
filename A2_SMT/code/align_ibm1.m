@@ -77,7 +77,7 @@ function [eng, fre, avg_french_sentence_length] = read_hansard(trainDir, numSent
     
     sentence_number = 1;
 
-    avg_french_sentence_length = 0
+    avg_french_sentence_length = 0;
 
     for iFile=1:length(DD)
         
@@ -90,6 +90,8 @@ function [eng, fre, avg_french_sentence_length] = read_hansard(trainDir, numSent
         
         english_lines = textread([trainDir, filesep, english_file_name], '%s','delimiter','\n');
         french_lines = textread([trainDir, filesep, french_file_name], '%s','delimiter','\n');
+
+        avg_french_sentence_length_file = 0;
   
         for i=1:length(english_lines)
             
@@ -105,9 +107,12 @@ function [eng, fre, avg_french_sentence_length] = read_hansard(trainDir, numSent
             
             sentence_number = sentence_number + 1;
 
-            avg_french_sentence_length = avg_french_sentence_length + length(fre);
+            avg_french_sentence_length_file = avg_french_sentence_length_file + length(fre);
       
         end
+
+        avg_french_sentence_length_file = avg_french_sentence_length_file / length(french_lines);
+        avg_french_sentence_length = avg_french_sentence_length + avg_french_sentence_length_file;
 
     end
 
@@ -134,7 +139,7 @@ function AM = initialize(eng, fre)
             english_word = eng{i}{j};
             
             if ~isfield(AM, english_word)
-               AM.(english_word) = struct(); 
+               AM.(english_word) = struct(CSC401_A2_DEFNS.NULL_TOKEN, 0); 
             end
             
             for k=1:length(french_sentence)
@@ -215,7 +220,7 @@ function t = em_step(t, eng, fre, AVG_FRE_LEN)
 
         % add NULL token
         for x=1:min(3,length(french_sentence)-round(AVG_FRE_LEN))
-            french_sentence(length(french_sentence)+1) = '___NULL___';
+            french_sentence{length(french_sentence)+1} = CSC401_A2_DEFNS.NULL_TOKEN;
         end
 
         french_words_seen = struct();
