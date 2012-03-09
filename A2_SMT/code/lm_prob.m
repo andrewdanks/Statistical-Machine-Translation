@@ -77,7 +77,7 @@ function logProb = lm_prob(sentence, LM, type, delta, vocabSize, N, N_r, count_b
         if cond_prob > 0
           logProb = logProb + log2(cond_prob);
         else
-          logProb = -Inf
+          logProb = -Inf;
           break
         end
       

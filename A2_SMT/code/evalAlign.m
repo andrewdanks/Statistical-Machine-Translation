@@ -30,7 +30,7 @@ function evalAlign(LME, LMF)
 
             for f=1:length(french_sentences)
                 french_sentence = preprocess(french_sentences{f}, 'f');
-                test_english_sentences{f} = preprocess(decode2( french_sentence, LME, AM, 'smooth', delta, vocabSizeEng ), 'e');
+                test_english_sentences{f} = decode2( french_sentence, LME, AM, 'smooth', delta, vocabSizeEng );
             end
 
             show_analysis(english_sentences, test_english_sentences);
