@@ -100,10 +100,10 @@ function [eng, fre, avg_french_sentence_length] = read_hansard(trainDir, numSent
             end
             
             words = strsplit(' ', preprocess(english_lines{i}, 'e'));
-            eng{sentence_number} = words;
+            eng{sentence_number} = words(1:length(words)-1); % skip SENTSTART / SENTEND
 
             words = strsplit(' ', preprocess(french_lines{i}, 'f'));
-            fre{sentence_number} = words;
+            fre{sentence_number} = words(1:length(words)-1);
             
             sentence_number = sentence_number + 1;
 

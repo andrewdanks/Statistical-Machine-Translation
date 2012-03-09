@@ -26,27 +26,27 @@ function outSentence = preprocess( inSentence, language )
   outSentence = inSentence;
   
   % perform language-agnostic changes
-  outSentence = regexprep( outSentence, '([\.\?!`"\*,\:;\(\)\[\]/\+\<>\=\.\?\!\\$\%\&])', ' $1 ' );
+  outSentence = regexprep( outSentence, '([\.\?!`"\*,\:;\(\)\[\]/\-\+\<>\=\.\?\!\\$\%\&])', ' $1 ' );
   
   % separate dashes in mathematical expression
   outSentence = regexprep( outSentence, '(\d)\s*(\-)\s*(\d)', '$1 $2 $3' );
   % separate dashes between parentheses
-  inParentheses = false;
-  new_outSentence = '';
-  for i=1:length(outSentence)
-    c = outSentence(i);
-    if strcmp(c,'(')
-      inParentheses = true;
-    end
-    if inParentheses && strcmp(c,'-')
-      c = ' - ';
-    end
-    if strcmp(c,')')
-      inParentheses = false;
-    end
-    new_outSentence = [new_outSentence, c];
-  end
-  outSentence = new_outSentence;
+  % inParentheses = false;
+  % new_outSentence = '';
+  % for i=1:length(outSentence)
+  %   c = outSentence(i);
+  %   if strcmp(c,'(') || strcmp(c,'[')
+  %     inParentheses = true;
+  %   end
+  %   if inParentheses && strcmp(c,'-')
+  %     c = ' - ';
+  %   end
+  %   if strcmp(c,')') || strcmp(c,']')
+  %     inParentheses = false;
+  %   end
+  %   new_outSentence = [new_outSentence, c];
+  % end
+  % outSentence = new_outSentence;
   
   switch language
    case 'e'
