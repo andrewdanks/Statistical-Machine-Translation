@@ -102,10 +102,10 @@ function [eng, fre, avg_eng_sentence_length] = read_hansard(trainDir, numSentenc
             end
             
             words = strsplit(' ', preprocess(english_lines{i}, 'e'));
-            eng{sentence_number} = words(2:length(words)-1); % skip SENTSTART / SENTEND
+            eng{sentence_number} = words;
 
             words = strsplit(' ', preprocess(french_lines{i}, 'f'));
-            fre{sentence_number} = words(2:length(words)-1);
+            fre{sentence_number} = words;
             
             sentence_number = sentence_number + 1;
 
@@ -232,6 +232,9 @@ function t = em_step(t, eng, fre, AVG_ENG_LEN)
                 
         english_sentence = eng{s};
         french_sentence = fre{s};
+
+        english_sentence = english_sentence(2:length(english_sentence)-1); % skip SENTSTART / SENTEND
+        french_sentence = french_sentence(2:length(french_sentence)-1); % skip SENTSTART / SENTEND
 
 
         % Add NULL token: We could add a certain number of NULL_tokens
