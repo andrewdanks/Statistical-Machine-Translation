@@ -32,7 +32,9 @@ function AM = align_ibm1(trainDir, numSentences, maxIter, fn_AM)
   global CSC401_A2_DEFNS
     
   % Read in the training data
-  [eng, fre, avg_french_sentence_length] = read_hansard(trainDir, numSentences);
+  % We use avg_english_sentence_length to determine how many NULL tokens to
+  % add to the english sentence.
+  [eng, fre, avg_eng_sentence_length] = read_hansard(trainDir, numSentences);
 
   % Initialize AM uniformly 
   AM = initialize(eng, fre);
@@ -40,7 +42,7 @@ function AM = align_ibm1(trainDir, numSentences, maxIter, fn_AM)
   % Iterate between E and M steps
   for iter=1:maxIter
     disp(['em_step iteration ', int2str(iter)]);
-    AM = em_step(AM, eng, fre, avg_french_sentence_length);
+    AM = em_step(AM, eng, fre, avg_eng_sentence_length);
   end 
 
   % Save the alignment model
@@ -57,7 +59,7 @@ end
 %
 % --------------------------------------------------------------------------------
 
-function [eng, fre, avg_french_sentence_length] = read_hansard(trainDir, numSentences)
+function [eng, fre, avg_eng_sentence_length] = read_hansard(trainDir, numSentences)
 %
 % Read 'numSentences' parallel sentences from texts in the 'dir' directory.
 %
@@ -77,7 +79,7 @@ function [eng, fre, avg_french_sentence_length] = read_hansard(trainDir, numSent
     
     sentence_number = 1;
 
-    avg_french_sentence_length = 0;
+    avg_eng_sentence_length = 0;
 
     for iFile=1:length(DD)
         
@@ -91,7 +93,7 @@ function [eng, fre, avg_french_sentence_length] = read_hansard(trainDir, numSent
         english_lines = textread([trainDir, filesep, english_file_name], '%s','delimiter','\n');
         french_lines = textread([trainDir, filesep, french_file_name], '%s','delimiter','\n');
 
-        avg_french_sentence_length_file = 0;
+        avg_eng_sentence_length_file = 0;
   
         for i=1:length(english_lines)
             
@@ -107,16 +109,16 @@ function [eng, fre, avg_french_sentence_length] = read_hansard(trainDir, numSent
             
             sentence_number = sentence_number + 1;
 
-            avg_french_sentence_length_file = avg_french_sentence_length_file + length(fre);
+            avg_eng_sentence_length_file = avg_eng_sentence_length_file + length(fre);
       
         end
 
-        avg_french_sentence_length_file = avg_french_sentence_length_file / length(french_lines);
-        avg_french_sentence_length = avg_french_sentence_length + avg_french_sentence_length_file;
+        avg_eng_sentence_length_file = avg_eng_sentence_length_file / length(french_lines);
+        avg_eng_sentence_length = avg_eng_sentence_length + avg_eng_sentence_length_file;
 
     end
 
-    avg_french_sentence_length = avg_french_sentence_length / length(DD);
+    avg_eng_sentence_length = avg_eng_sentence_length / length(DD);
   
 
 end
@@ -127,7 +129,7 @@ function AM = initialize(eng, fre)
 % Initialize alignment model uniformly.
 % Only set non-zero probabilities where word pairs appear in corresponding sentences.
 %
-    AM = {}; % AM.(english_word).(foreign_word)
+    AM = struct('NULL_', 0); % AM.(english_word).(foreign_word)
 
     for i=1:length(eng)
         
@@ -139,7 +141,7 @@ function AM = initialize(eng, fre)
             english_word = eng{i}{j};
             
             if ~isfield(AM, english_word)
-               AM.(english_word) = struct('NULL_', 0); 
+               AM.(english_word) = struct(); 
             end
             
             for k=1:length(french_sentence)
@@ -173,7 +175,19 @@ function AM = initialize(eng, fre)
     
 end
 
-function t = em_step(t, eng, fre, AVG_FRE_LEN)
+
+function distortion = initialize_D(eng, fre)
+
+    % Implement the Distortion model such that the probability
+    % for D(i|i,L_E,L_F) is high and the probability for
+    % D(i|j,L_E,L_F) is uniform.
+
+    distortion = 0;
+
+end
+
+
+function t = em_step(t, eng, fre, AVG_ENG_LEN)
 % 
 % One step in the EM algorithm.
 %
@@ -218,9 +232,14 @@ function t = em_step(t, eng, fre, AVG_FRE_LEN)
         english_sentence = eng{s};
         french_sentence = fre{s};
 
-        % add NULL token
-        for x=1:min(3,length(french_sentence)-round(AVG_FRE_LEN))
-            french_sentence{length(french_sentence)+1} = 'NULL_';
+
+        % Add NULL token: We could add a certain number of NULL_tokens
+        % proportional to the sentence length, but it's difficult to 
+        % know if a sentence is long or short if we don't know the
+        % average. For future reference, it could have been useful
+        % to know the variance, as well.
+        for x=1:min(3,length(english_sentence)-round(AVG_ENG_LEN))
+            english_sentence{length(english_sentence)+1} = 'NULL_';
         end
 
         french_words_seen = struct();

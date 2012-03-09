@@ -111,7 +111,8 @@ bestHyp = cell2string(englishWords(1,order));
 
 if strcmp(smooth_type,'turing')    
   p_bestHyp = lm_prob( processedLine, LM, lmtype, 0, 0, N, N_r, count_bigrams, S) + ...
-else
+end
+if ~strcmp(smooth_type,'turing')
   p_bestHyp = lm_prob( processedLine, LM, lmtype, delta, vocabSize, 0, 0, 0, 0) + ...
 end
 
@@ -143,7 +144,8 @@ while (iter < MAXTRANS )
 
   if strcmp(smooth_type,'turing')    
     p_newHyp = lm_prob( newHyp, LM, lmtype, 0, 0, N, N_r, count_bigrams, S) + ...
-  else
+  end
+  if ~strcmp(smooth_type,'turing')
     p_newHyp = lm_prob( newHyp, LM, lmtype, delta, vocabSize, 0, 0, 0, 0) + ...
   end
   
