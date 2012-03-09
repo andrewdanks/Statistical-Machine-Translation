@@ -109,12 +109,7 @@ order   = 1:length(frenchWords);
 % initial best guess
 bestHyp = cell2string(englishWords(1,order));
 
-if strcmp(smooth_type,'turing')    
-  p_bestHyp = lm_prob( processedLine, LM, lmtype, 0, 0, N, N_r, count_bigrams, S) + ...
-end
-if ~strcmp(smooth_type,'turing')
-  p_bestHyp = lm_prob( processedLine, LM, lmtype, delta, vocabSize, 0, 0, 0, 0) + ...
-end
+p_bestHyp = lm_prob( processedLine, LM, lmtype, delta, vocabSize) + ...
 
     sum(log2(scores(1,order)));
 
@@ -141,13 +136,6 @@ while (iter < MAXTRANS )
   % evaluate
   newHyp = cell2string(diag(englishWords(wordInd,order)));
   p_newHyp = lm_prob( newHyp, LM, lmtype, delta, vocabSize )+ ...
-
-  if strcmp(smooth_type,'turing')    
-    p_newHyp = lm_prob( newHyp, LM, lmtype, 0, 0, N, N_r, count_bigrams, S) + ...
-  end
-  if ~strcmp(smooth_type,'turing')
-    p_newHyp = lm_prob( newHyp, LM, lmtype, delta, vocabSize, 0, 0, 0, 0) + ...
-  end
   
   sum(log2(diag(scores(wordInd,order))));
 
