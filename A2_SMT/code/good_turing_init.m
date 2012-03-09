@@ -1,7 +1,8 @@
 
 % Call this function before calling good_turing
 % This function requires a lot of computation and should
-% only be called once.
+% only be called once for a sequence of good_turing calls.
+
 function [N, N_r, count_bigrams, S] = good_turing_init(LM)
 
     % Calculate N and Calculate N_r - the number of bins with freq r.
@@ -42,7 +43,6 @@ function [N, N_r, count_bigrams, S] = good_turing_init(LM)
         Y(i) = log2(Nr);
       end
     end
-
 
     S = polyfit(X, Y, 1);
 

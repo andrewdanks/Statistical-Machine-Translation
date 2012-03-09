@@ -169,12 +169,18 @@ function t = em_step(t, eng, fre)
 % 
 % One step in the EM algorithm.
 %
+
     tcount = struct();
     total = struct();
     
-%    disp('Initializing tcount/total values...');
-    
-    %Set tcounts to 0 for each (f,e)
+
+%   It is much slower to initialize first then
+%   go through with E-M. We will initialize
+%   the necessary tcounts/total when we get
+%   to the field
+
+%   disp('Initializing tcount/total values...');
+    % Set tcounts to 0 for each (f,e)
 %     for i=1:length(eng)
 %       for j=1:length(eng{i})
 %           english_word = eng{i}{j};

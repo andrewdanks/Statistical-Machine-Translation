@@ -50,9 +50,6 @@ for iFile=1:length(DD)
     processedLine = preprocess(lines{line}, language);
     words = strsplit(' ', processedLine );
     
-    %sentence = strcat(SENTSTARTMARK, processedLine, SENTENDMARK);
-    %words = strsplit(' ', sentence );
-    
     % Count bi/unigrams
     for w=1:length(words)
         
