@@ -140,7 +140,7 @@ while (iter < MAXTRANS )
 end
 
 
-end
+return
 
 
 function eSen = cell2string( c )
