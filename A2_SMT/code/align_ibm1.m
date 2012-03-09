@@ -37,12 +37,16 @@ function AM = align_ibm1(trainDir, numSentences, maxIter, fn_AM)
   [eng, fre, avg_eng_sentence_length] = read_hansard(trainDir, numSentences);
 
   % Initialize AM uniformly 
-  AM = initialize(eng, fre);
+  AM = initialize(eng, fre, avg_eng_sentence_length);
+
+  % Initialize DM. (IBM-2)
+  % DM = initialize_D(eng, fre);
 
   % Iterate between E and M steps
   for iter=1:maxIter
     disp(['em_step iteration ', int2str(iter)]);
-    AM = em_step(AM, eng, fre, avg_eng_sentence_length);
+    AM = em_step(AM, eng, fre);
+    %[AM, DM] = em_step(AM, DM, eng, fre);  %for IBM-2
   end 
 
   % Save the alignment model
@@ -72,8 +76,8 @@ function [eng, fre, avg_eng_sentence_length] = read_hansard(trainDir, numSentenc
 %
 %         eng{i} = strsplit(' ', preprocess(english_sentence, 'e'));
 %
-    eng = cell(numSentences);
-    fre = cell(numSentences);
+    eng = {};
+    fre = {};
     
     DD = dir( [ trainDir, filesep, '*', 'e'] );
     
@@ -101,11 +105,8 @@ function [eng, fre, avg_eng_sentence_length] = read_hansard(trainDir, numSentenc
                 break
             end
             
-            words = strsplit(' ', preprocess(english_lines{i}, 'e'));
-            eng{sentence_number} = words;
-
-            words = strsplit(' ', preprocess(french_lines{i}, 'f'));
-            fre{sentence_number} = words;
+            eng{sentence_number} = strsplit(' ', preprocess(english_lines{i}, 'e'));
+            fre{sentence_number} = strsplit(' ', preprocess(french_lines{i}, 'f'));
             
             sentence_number = sentence_number + 1;
 
@@ -124,18 +125,28 @@ function [eng, fre, avg_eng_sentence_length] = read_hansard(trainDir, numSentenc
 end
 
 
-function AM = initialize(eng, fre)
+function AM = initialize(eng, fre, AVG_ENG_LEN)
 %
 % Initialize alignment model uniformly.
 % Only set non-zero probabilities where word pairs appear in corresponding sentences.
 %
     AM = {}; % AM.(english_word).(foreign_word)
-    AM.NULL_ = struct();
+
 
     for i=1:length(eng)
         
         english_sentence = eng{i};
         french_sentence = fre{i};
+
+        % Add NULL token: We could add a certain number of NULL_tokens
+        % proportional to the sentence length, but it's difficult to 
+        % know if a sentence is long or short if we don't know the
+        % average. For future reference, it could have been useful
+        % to know the variance, as well.
+        for x=1:min(3,length(english_sentence)-round(AVG_ENG_LEN))
+            english_sentence{length(english_sentence)+1} = 'NULL_';
+        end
+        eng{i} = english_sentence;
         
         for j=1:length(english_sentence)
             
@@ -177,24 +188,89 @@ function AM = initialize(eng, fre)
 end
 
 
-function distortion = initialize_D(eng, fre)
+% function DM = initialize_D(eng, fre)
 
-    % Implement the Distortion model such that the probability
-    % for D(i|i,L_E,L_F) is high and the probability for
-    % D(i|j,L_E,L_F) is uniform.
+%     % Implement the Distortion model such that the probability
+%     % for D(i|i,L_E,L_F) is high and the probability for
+%     % D(i|j,L_E,L_F) is uniform.
 
-    distortion = 0;
+%     DM = struct();
 
-end
+%     for s=1:length(eng)
+
+%         english_sentence = eng{s};
+%         french_sentence = fre{s};
+
+%         L_E = length(english_sentence);
+%         L_F = length(french_sentence);
+
+%         english_sentence = english_sentence(2:length(english_sentence)-1); % skip SENTSTART / SENTEND
+%         french_sentence = french_sentence(2:length(french_sentence)-1);
+
+%         for e=1:length(french_sentence)
+%             for f=1:length(english_sentence)
 
 
-function t = em_step(t, eng, fre, AVG_ENG_LEN)
+%                 if ~isfield(DM, e)
+%                     DM.(e) = struct();
+%                 end
+%                 if ~isfield(DM.(e), f)
+%                     DM.(e).(f) = struct();
+%                 end
+%                 if ~isfield(DM.(e).(f), L_E)
+%                     DM.(e).(f).(L_E) = struct();
+%                 end
+                
+%                 DM.(e).(f).(L_E).(L_F) = 0;
+
+
+%             end
+%         end    
+
+%     end
+
+
+%     fieldnames_dm1 = fieldnames(DM);
+%     for e=1:length(fieldnames_dm1)
+%         fieldnames_dm2 = fieldnames(DM.(e));
+%         for f=1:length(fieldnames_dm2)
+%             fieldnames_dm3 = fieldnames(DM.(e).(f));
+%             for i=1:length(fieldnames_dm3)
+%                 I = fieldnames_dm3{i};
+%                 fieldnames_dm4 = fieldnames(DM.(e).(f).(I));
+%                 for j=1:length(fieldnames_dm4)
+%                     J = fieldnames_dm4{j};
+
+%                     if e == f
+%                         DM.(e).(f).(I).(J) = 1 / (length(fieldnames_dm1)*length(fieldnames_dm2));
+%                     else
+%                         DM.(e).(f).(I).(J) = 1 / (length(fieldnames_dm1)*length(fieldnames_dm2)*length(fieldnames_dm3)*length(fieldnames_dm4));
+%                     end
+
+%                 end
+%             end
+%         end
+%     end
+
+
+
+% end
+
+
+function t = em_step(t, eng, fre)
+% function [t, DM] = em_step(t, DM, eng, fre)  %IBM-2
 % 
 % One step in the EM algorithm.
 %
 
     tcount = struct();
     total = struct();
+
+    % Note to marker: commented out all IBM-2 code due to lack of time to modify decoder
+    % to consider it.
+    %
+    % dcount = struct();
+    % dtotal = struct();
     
 
 %   It is much slower to initialize first then
@@ -233,20 +309,14 @@ function t = em_step(t, eng, fre, AVG_ENG_LEN)
         english_sentence = eng{s};
         french_sentence = fre{s};
 
+        % For IBM-2:
+        % L_E = length(english_sentence);
+        % L_F = length(french_sentence);
+
         english_sentence = english_sentence(2:length(english_sentence)-1); % skip SENTSTART / SENTEND
-        french_sentence = french_sentence(2:length(french_sentence)-1); % skip SENTSTART / SENTEND
+        french_sentence = french_sentence(2:length(french_sentence)-1);
 
-
-        % Add NULL token: We could add a certain number of NULL_tokens
-        % proportional to the sentence length, but it's difficult to 
-        % know if a sentence is long or short if we don't know the
-        % average. For future reference, it could have been useful
-        % to know the variance, as well.
-        for x=1:min(3,length(english_sentence)-round(AVG_ENG_LEN))
-            english_sentence{length(english_sentence)+1} = 'NULL_';
-        end
-
-        french_words_seen = struct();
+        french_words_seen = struct(); % ensure we are iterating through unique words
         
         for f=1:length(french_sentence)
             
@@ -265,7 +335,15 @@ function t = em_step(t, eng, fre, AVG_ENG_LEN)
                 english_word = english_sentence{e};
                 if ~isfield(english_words_seen, english_word) && isfield(t, english_word) && isfield(t.(english_word), french_word)
                     english_words_seen.(english_word) = 1; % mark seen
+
+                    
+                    % IBM-1:
                     denom_c = denom_c + (t.(english_word).(french_word) * count(french_word, french_sentence));
+
+                    % But if this were IBM-2:
+                    % denom_c = denom_c + (t.(english_word).(french_word) * DM.(e).(f).(L_E).(L_F) * count(french_word, french_sentence));
+
+
                 end
             end
             
@@ -290,6 +368,29 @@ function t = em_step(t, eng, fre, AVG_ENG_LEN)
                     total.(english_word) = 0;
                 end
                 % Done possible initializations
+
+                % IBM-2 initializations:
+                % if ~isfield(dcount, e)
+                %     dcount.(e) = struct();
+                % end
+                % if ~isfield(dcount.(e), f)
+                %     dcount.(e).(f) = struct();
+                % end
+                % if ~isfield(dcount.(e).(f), L_E)
+                %     dcount.(e).(f).(L_E) = struct();
+                % end
+                % if ~isfield(dcount.(e).(f).(L_E), L_F)
+                %     dcount.(e).(f).(L_E).(L_F) = 0;
+                % end
+                % if ~isfield(dtotal, f)
+                %     dtotal.(f) = struct();
+                % end
+                % if ~isfield(dtotal.(f), L_E)
+                %     dtotal.(f).(L_E) = struct();
+                % end
+                % if ~isfield(dtotal.(f).(L_E), L_F)
+                %     dtotal.(f).(L_E).(L_F) = 0;
+                % end
                 
                 english_words_seen.(english_word) = 1; % mark seen
                 
@@ -304,6 +405,10 @@ function t = em_step(t, eng, fre, AVG_ENG_LEN)
                 
                 tcount.(english_word).(french_word) = tcount.(english_word).(french_word) + to_add;
                 total.(english_word) = total.(english_word) + to_add;
+
+                % dtotal.(f).(L_E).(L_F) = dtotal.(f).(L_E).(L_F) + to_add;
+                % dcount.(e).(f).(L_E).(L_F) = dcount.(e).(f).(L_E).(L_F) + to_add;
+
 
 
             end
@@ -323,7 +428,31 @@ function t = em_step(t, eng, fre, AVG_ENG_LEN)
         fieldnames_tcount = fieldnames(tcount.(english_word));
         for f=1:length(fieldnames_tcount)
             french_word = fieldnames_tcount{f};
+
+
             t.(english_word).(french_word) = tcount.(english_word).(french_word) / total.(english_word);
+
+            % Alternatively, we can use an add-N technique to skew the t-probabilties more so the alignment model
+            % isn't too confident about the alignment probabilities for rare events. I would have liked to test
+            % this more thoroughly for different values of N, but there wasn't enough time! I learned of this
+            % idea from the article, "Improving IBM Word-Alignment Model 1" by Robert MOORE, Microsoft Research.
+            % V = length(fieldnames(AM))
+            % N = arbitrary (need to test thoroughly to decide on good value of N)
+            % t.(english_word).(french_word) = (tcount.(english_word).(french_word) + N) / (total.(english_word) + N*V);
+
+
+            % IBM-2 Maximation for DM:
+            % fieldnames_dcount1 = fieldnames(dcount.(e).(f));
+            % for i=1:length(fieldnames_dcount1)
+            %     I = fieldnames_dcount{i};
+            %     fieldnames_dcount2 = fieldnames(dcount.(e).(f).(I));
+            %     for j=1:length(fieldnames_dcount2)
+            %         J = fieldnames_dcount2{j};
+            %         DM.(e).(f).(I).(J) = dcount.(e).(f).(I).(J) / dtotal.(f).(I).(J);
+            %     end
+            % end
+
+
         end
     end
     

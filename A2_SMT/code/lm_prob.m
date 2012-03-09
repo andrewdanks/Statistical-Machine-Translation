@@ -112,6 +112,8 @@ function logProb = good_turing(LM, words, N, N_r, count_bigrams, S)
     %
     % P(w_n|w_n-1) = P(w_n-1, w_n) / P(w_n-1)
 
+    k = 10; % only use G-T when frequence is less than k.
+
     logProb = 0;
 
     for w=2:length(words)
@@ -149,13 +151,35 @@ function logProb = good_turing(LM, words, N, N_r, count_bigrams, S)
       end
 
       % Calculate P(second_word | first_word)
-      if prob_first_word == 0
-        prob = 0;
+      if r < k
+        if prob_first_word == 0
+          prob = 0;
+        else
+          prob = prob_first_word_second_word / prob_first_word;
+        end
       else
-        prob = prob_first_word_second_word / prob_first_word;
+        % We calculate P(second_word | first_word) via MLE
+        count_first_word = 0;
+        count_first_word_second_word = 0;
+        if isfield(LM.bi, first_word)
+            count_first_word = LM.uni.(first_word);
+        end
+        if isfield(LM.bi, first_word) && isfield(LM.bi.(first_word), second_word)
+            count_first_word_second_word = LM.bi.(first_word).(second_word);
+        end
+        if count_first_word == 0
+            prob = 0;
+        else
+            prob = (count_first_word_second_word) / count_first_word;
+        end
       end
 
-      logProb = logProb + log2(prob);
+      if prob > 0
+        logProb = logProb + log2(prob);
+      else
+        logProb = -Inf;
+        break
+      end
 
     end
 

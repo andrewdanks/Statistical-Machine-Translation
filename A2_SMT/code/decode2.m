@@ -46,7 +46,7 @@ elseif strcmp(lmtype, 'smooth')
 	   ' parameters']);
     return;
   end
-  if (delta <= 0) or (delta > 1.0)
+  if (delta <= 0) || (delta > 1.0)
     disp( 'decode2: you must specify 0 < delta <= 1.0');
     return;
   end
