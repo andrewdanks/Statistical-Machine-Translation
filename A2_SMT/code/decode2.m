@@ -50,9 +50,8 @@ elseif strcmp(lmtype, 'smooth')
     disp( 'decode2: you must specify 0 < delta <= 1.0');
     return;
   end
-else if ~strcmp(lmtype, 'turing')
+else
   disp( 'type must be either '''' or ''smooth'' or ''turing''' );
-  return;
 end
 
 % We assume that the english sentence has as many words as the french
