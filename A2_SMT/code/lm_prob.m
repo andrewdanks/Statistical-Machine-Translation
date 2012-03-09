@@ -112,7 +112,7 @@ function logProb = good_turing(LM, words, N, N_r, count_bigrams, S)
     %
     % P(w_n|w_n-1) = P(w_n-1, w_n) / P(w_n-1)
 
-    k = 10; % only use G-T when frequence is less than k.
+    k = 100; % only use G-T when frequence is less than k.
 
     logProb = 0;
 
