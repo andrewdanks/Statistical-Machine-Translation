@@ -30,7 +30,7 @@ NUMSWAPS = 2;    % the number of random re-orderings of the words
 
 % some rudimentary parameter checking
 if (nargin < 4)
-  disp( 'lm_prob takes at least 4 parameters');
+  disp( 'decode2 takes at least 4 parameters');
   return;
 elseif nargin == 4
   lmtype = '';
@@ -42,16 +42,16 @@ if (isempty(lmtype))
   vocabSize = length(fieldnames(LM.uni));
 elseif strcmp(lmtype, 'smooth')
   if (nargin < 6)  
-    disp( ['lm_prob: if you specify smoothing, you need all 5' ...
+    disp( ['decode2: if you specify smoothing, you need all 5' ...
 	   ' parameters']);
     return;
   end
   if (delta <= 0) or (delta > 1.0)
-    disp( 'lm_prob: you must specify 0 < delta <= 1.0');
+    disp( 'decode2: you must specify 0 < delta <= 1.0');
     return;
   end
-else
-  disp( 'type must be either '''' or ''smooth''' );
+else if ~strcmp(lmtype, 'turing')
+  disp( 'type must be either '''' or ''smooth'' or ''turing''' );
   return;
 end
 
@@ -70,6 +70,10 @@ AM = rmfield(AM, CSC401_A2_DEFNS.SENTEND );
 VE = fieldnames(AM);
 AM.(CSC401_A2_DEFNS.SENTSTART ) = SS;
 AM.(CSC401_A2_DEFNS.SENTEND ) = SE;
+
+if delta == -1
+  [N, N_r, count_bigrams, S] = good_turing_init(LM)
+end
 
 MX = 0;
 for iew=1:length(VE)
@@ -104,7 +108,13 @@ order   = 1:length(frenchWords);
 
 % initial best guess
 bestHyp = cell2string(englishWords(1,order));
-p_bestHyp = lm_prob( bestHyp, LM, lmtype, delta, vocabSize ) + ...
+
+if strcmp(smooth_type,'turing')    
+  p_bestHyp = lm_prob( processedLine, LM, lmtype, 0, 0, N, N_r, count_bigrams, S) + ...
+else
+  p_bestHyp = lm_prob( processedLine, LM, lmtype, delta, vocabSize, 0, 0, 0, 0) + ...
+end
+
     sum(log2(scores(1,order)));
 
 
@@ -130,7 +140,14 @@ while (iter < MAXTRANS )
   % evaluate
   newHyp = cell2string(diag(englishWords(wordInd,order)));
   p_newHyp = lm_prob( newHyp, LM, lmtype, delta, vocabSize )+ ...
-      sum(log2(diag(scores(wordInd,order))));
+
+  if strcmp(smooth_type,'turing')    
+    p_newHyp = lm_prob( newHyp, LM, lmtype, 0, 0, N, N_r, count_bigrams, S) + ...
+  else
+    p_newHyp = lm_prob( newHyp, LM, lmtype, delta, vocabSize, 0, 0, 0, 0) + ...
+  end
+  
+  sum(log2(diag(scores(wordInd,order))));
 
   if p_newHyp > p_bestHyp
     p_bestHyp = p_newHyp;
